@@ -10,7 +10,36 @@ let contacts = [{
 	marked: false,
 }];
 
+let contactsCount = contacts.length;
+
 app.use(express.json());
+
+app.get('/api-v1/contacts/count', async (req, res) => {
+	res.set({
+		'Cache-Control': 'no-cache',
+		'Content-Type': 'text/event-stream',
+		'Connection': 'keep-alive'
+	});
+	res.flushHeaders();
+
+	res.write('retry: 10000\n\n');
+
+	res.write(`data: ${JSON.stringify({contactsCount: contacts.length})}\n\n`);
+	res.write(`id: ${v4()}\n\n`);
+
+	while (true) {
+		await new Promise(resolve => setTimeout(resolve, 1000));
+
+		if (contactsCount !== contacts.length) {
+			contactsCount = contacts.length
+
+			res.write(`data: ${JSON.stringify({contactsCount: contacts.length})}\n\n`);
+			res.write(`id: ${v4()}\n\n`);
+		}
+
+		// res.write(`event: customEvent\ndata: ${v4()}\n\n`);
+	}
+});
 
 app.get('/api-v1/contacts', (req, res) => {
 	res.status(200).json(contacts);

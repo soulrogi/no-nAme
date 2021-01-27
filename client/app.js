@@ -7,10 +7,12 @@ new Vue({
 			name: '',
 			value: '',
 		},
+		count: 0,
 		contacts: [],
 	}),
 	async mounted() {
 		this.contacts = await request('/api-v1/contacts');
+		this.countEvent();
 	},
 	methods: {
 		async createContact() {
@@ -34,6 +36,26 @@ new Vue({
 			await request(`/api-v1/contacts/${id}`, 'DELETE');
 
 			this.contacts = this.contacts.filter(item => item.id !== id);
+		},
+		countEvent() {
+			const event  = new EventSource('/api-v1/contacts/count');
+			event.onopen = () => {
+				console.log('Открыто соединение');
+			}
+
+			// event.onmessage = (e) => {
+			// 	const src  = JSON.parse(e.data);
+			// 	this.count = src.contactsCount;
+			// };
+
+			event.addEventListener('message', (e) => {
+				const src  = JSON.parse(e.data);
+				this.count = src.contactsCount;
+			});
+
+			event.addEventListener('customEvent', (e) => {
+				console.log('customEvent', e);
+			});
 		},
 	},
 	computed: {
